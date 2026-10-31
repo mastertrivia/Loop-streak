@@ -826,7 +826,7 @@ class _HomePageState extends State<HomePage> {
                         onSwipe: swipe,
                         leaving: _leaving,
                       )
-                    : ClassicHabitList(
+                     : ClassicHabitList(
                         habits: visible,
                         mode: _mode,
                         reordering: _reordering,
@@ -881,6 +881,9 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _openDetails(Habit habit) {
+    final settings = context.read<SettingsController>();
+    final classic = !settings.isMinimalStyle && !settings.isExpressStyle;
+    if (classic && !_chromeOpen) return;
     AppNavigator.clearPane();
     if (isWideLayout(context)) AppNavigator.paneItem.value = habit.id;
     AppNavigator.push(HabitDetailsPage(habitId: habit.id), fade: true);
@@ -1065,6 +1068,7 @@ class _ChromeToggle extends StatelessWidget {
           decoration: BoxDecoration(
             color: context.colors.surfaceContainerHighest.withValues(alpha: 0.7),
             borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: GlassStyle.edge(context)),
           ),
           child: AnimatedRotation(
             turns: expanded ? 0.5 : 0,
