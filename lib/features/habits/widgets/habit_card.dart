@@ -460,7 +460,14 @@ class _ActionButton extends StatelessWidget {
           done: doneToday,
           circle: circle,
           onTap: () {
-            onToggleToday();
+            unawaited(
+              confirmPositiveCheck(
+                context,
+                habit: habit,
+                done: doneToday,
+                onComplete: onToggleToday,
+              ),
+            );
           },
         );
       case HabitKind.negative:

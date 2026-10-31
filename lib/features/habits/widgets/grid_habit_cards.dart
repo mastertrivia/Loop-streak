@@ -82,7 +82,14 @@ class _CheckTile extends StatelessWidget {
               : context.l10n.a11y_mark_done(habit.name)),
       child: GestureDetector(
         onTap: () {
-          onTap();
+          unawaited(
+            confirmPositiveCheck(
+              context,
+              habit: habit,
+              done: done,
+              onComplete: onTap,
+            ),
+          );
         },
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 220),

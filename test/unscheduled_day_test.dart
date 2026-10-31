@@ -19,6 +19,8 @@ Finder _button(String label) => find.byWidgetPredicate(
 Future<void> _tapCheck(WidgetTester tester) async {
   await tester.tap(_button('Mark Read as done'));
   await tester.pumpAndSettle();
+  await tester.tap(find.text('Yes, complete it'));
+  await tester.pumpAndSettle();
 }
 
 Future<void> _pumpWith(WidgetTester tester, Habit habit) async {

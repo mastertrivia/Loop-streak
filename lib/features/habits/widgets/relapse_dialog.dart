@@ -13,6 +13,32 @@ import 'package:streak/features/settings/state/settings_controller.dart';
 bool isRelapse(Habit habit, DateTime date) =>
     habit.completions.containsKey(date.dayKey);
 
+Future<bool> askComplete(BuildContext context, Habit habit) async {
+  return await showAppConfirmDialog(
+        context,
+        title: context.l10n.mark_completed_title,
+        message: habit.name,
+        confirmLabel: context.l10n.mark_completed_confirm,
+        icon: LucideIcons.check,
+        iconColor: context.tokens.success,
+        danger: false,
+      ) ==
+      true;
+}
+
+Future<void> confirmPositiveCheck(
+  BuildContext context, {
+  required Habit habit,
+  required bool done,
+  required VoidCallback onComplete,
+}) async {
+  if (habit.kind != HabitKind.positive || done) {
+    onComplete();
+    return;
+  }
+  if (await askComplete(context, habit) && context.mounted) onComplete();
+}
+
 Future<double?> askRelapse(BuildContext context, Habit habit) async {
   final spent = ValueNotifier(habit.dailyCost);
   final confirmed = await showAppConfirmDialog(

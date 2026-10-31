@@ -74,8 +74,14 @@ void main() {
     }
 
     Future<void> check(WidgetTester tester, int index) async {
+      await tester.tap(find.bySemanticsLabel(RegExp(r'^Mark \w+ as')).at(index));
+      await tester.pump();
+      final confirm = find.text('Yes, complete it');
+      if (confirm.evaluate().isNotEmpty) {
+        await tester.tap(confirm);
+        await tester.pump();
+      }
       await tester.runAsync(() async {
-        await tester.tap(find.bySemanticsLabel(RegExp(r'^Mark \w+ as')).at(index));
         await Future<void>.delayed(const Duration(milliseconds: 80));
       });
       await tester.pump();

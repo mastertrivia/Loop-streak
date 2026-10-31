@@ -347,6 +347,8 @@
     }
   },
   "log_relapse_confirm": "Yes, log it",
+  "mark_completed_title": "Mark as completed?",
+  "mark_completed_confirm": "Yes, complete it",
   "permission_required": "Notification permission is required",
   "streaks": "Streaks",
   "activity": "Activity",

@@ -366,7 +366,18 @@ class ExpressAction extends StatelessWidget {
   Widget build(BuildContext context) {
     final today = AppClock.now();
     final (icon, color, onTap) = switch (habit.kind) {
-      HabitKind.positive => (LucideIcons.check, habit.color.shownIn(context), onToggleToday),
+      HabitKind.positive => (
+        LucideIcons.check,
+        habit.color.shownIn(context),
+        () => unawaited(
+          confirmPositiveCheck(
+            context,
+            habit: habit,
+            done: done,
+            onComplete: onToggleToday,
+          ),
+        ),
+      ),
       HabitKind.negative => (
         done ? LucideIcons.shieldCheck : LucideIcons.ban,
         done ? habit.color.shownIn(context) : context.tokens.danger,

@@ -15,12 +15,14 @@ Future<bool?> showAppConfirmDialog(
   Widget? body,
   IconData icon = LucideIcons.trash2,
   bool danger = true,
+  Color? iconColor,
 }) {
   return showDialog<bool>(
     context: context,
     builder: (dialogContext) {
       final scheme = dialogContext.colors;
       final accent = danger ? dialogContext.tokens.danger : scheme.primary;
+      final glyphColor = iconColor ?? accent;
       return Dialog(
         backgroundColor: scheme.surface,
         insetPadding: const EdgeInsets.symmetric(horizontal: 40),
@@ -36,10 +38,10 @@ Future<bool?> showAppConfirmDialog(
                 width: 56,
                 height: 56,
                 decoration: BoxDecoration(
-                  color: accent.withValues(alpha: 0.14),
+                  color: glyphColor.withValues(alpha: 0.14),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(icon, color: accent, size: 26),
+                child: Icon(icon, color: glyphColor, size: 26),
               ),
               const SizedBox(height: 16),
               Text(
