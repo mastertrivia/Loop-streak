@@ -883,7 +883,7 @@ class _HomePageState extends State<HomePage> {
   void _openDetails(Habit habit) {
     final settings = context.read<SettingsController>();
     final classic = !settings.isMinimalStyle && !settings.isExpressStyle;
-    if (classic && !_chromeOpen) return;
+    if (classic && !_chromeOpen && habit.kind != HabitKind.quantitative) return;
     AppNavigator.clearPane();
     if (isWideLayout(context)) AppNavigator.paneItem.value = habit.id;
     AppNavigator.push(HabitDetailsPage(habitId: habit.id), fade: true);
