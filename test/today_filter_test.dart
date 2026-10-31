@@ -40,6 +40,8 @@ void main() {
     await seedHabits(tester, [testHabit(id: 'a', name: 'Run')]);
     await pumpScreen(tester, const HomePage());
 
+    await tester.tap(find.byIcon(LucideIcons.chevronDown));
+    await tester.pumpAndSettle();
     await tester.tap(find.byIcon(LucideIcons.listFilter));
     await tester.pumpAndSettle();
 

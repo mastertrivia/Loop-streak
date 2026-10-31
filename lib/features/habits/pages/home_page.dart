@@ -60,6 +60,10 @@ import 'package:streak/core/extensions/color_extensions.dart';
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
+  static final chromeReset = ValueNotifier(0);
+
+  static void collapseChrome() => chromeReset.value++;
+
   @override
   State<HomePage> createState() => _HomePageState();
 }
@@ -72,6 +76,7 @@ class _HomePageState extends State<HomePage> {
   String? _category;
   late HeatmapMode _mode;
   bool _reordering = false;
+  bool _chromeOpen = false;
 
   final Map<String, bool> _frozen = {};
   final Set<String> _leaving = {};
@@ -86,11 +91,13 @@ class _HomePageState extends State<HomePage> {
     final settings = context.read<SettingsController>();
     _mode = HeatmapMode.values[settings.openingMode.clamp(0, 2)];
     if (settings.todayCategory.isNotEmpty) _category = settings.todayCategory;
+    HomePage.chromeReset.addListener(_collapseChrome);
     BackHandlers.add(_backOut);
   }
 
   @override
   void dispose() {
+    HomePage.chromeReset.removeListener(_collapseChrome);
     BackHandlers.remove(_backOut);
     for (final timer in _timers.values) {
       timer.cancel();
@@ -98,6 +105,11 @@ class _HomePageState extends State<HomePage> {
     _confetti.dispose();
     _scrolled.dispose();
     super.dispose();
+  }
+
+  void _collapseChrome() {
+    if (!_chromeOpen || !mounted) return;
+    setState(() => _chromeOpen = false);
   }
 
   bool _backOut() {
@@ -356,6 +368,7 @@ class _HomePageState extends State<HomePage> {
       ),
     };
     final shortcut = shortcuts[settings.minimalShortcut];
+    final hideClassicChrome = classic && !_reordering && !_chromeOpen;
     return Scaffold(
       extendBodyBehindAppBar: classic,
       floatingActionButton: express && !_reordering
@@ -371,7 +384,9 @@ class _HomePageState extends State<HomePage> {
               ),
             )
           : null,
-      appBar: AppBar(
+      appBar: hideClassicChrome
+          ? null
+          : AppBar(
         title: _reordering
             ? Text(context.l10n.reorder)
             : minimal || express || stackedRows(context)
@@ -704,28 +719,57 @@ class _HomePageState extends State<HomePage> {
                   : Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        if (!minimal) const DailyQuote(),
-                        if (!minimal) const SizedBox(height: 8),
-                        if (!minimal && settings.showTodayProgress)
-                          TodayProgress(done: done, total: total, ratio: ratio),
-                        if (!minimal &&
-                            settings.cardActivity &&
-                            settings.viewSwitcher) ...[
-                          SizedBox(height: settings.showTodayProgress ? 20 : 6),
-                          _ViewSelector(mode: _mode, onChanged: _changeMode),
+                        if (!minimal) ...[
+                          if (_chromeOpen) ...[
+                            const DailyQuote(),
+                            const SizedBox(height: 8),
+                          ],
+                          if (settings.showTodayProgress)
+                            TodayProgress(
+                              done: done,
+                              total: total,
+                              ratio: ratio,
+                              leading: _ChromeToggle(
+                                expanded: _chromeOpen,
+                                onTap: () => setState(
+                                  () => _chromeOpen = !_chromeOpen,
+                                ),
+                              ),
+                            )
+                          else
+                            Align(
+                              alignment: AlignmentDirectional.centerStart,
+                              child: _ChromeToggle(
+                                expanded: _chromeOpen,
+                                onTap: () => setState(
+                                  () => _chromeOpen = !_chromeOpen,
+                                ),
+                              ),
+                            ),
                         ],
-                        if (!minimal || categories.isNotEmpty) ...[
+                        if (!classic || _chromeOpen) ...[
+                          if (!minimal &&
+                              settings.cardActivity &&
+                              settings.viewSwitcher) ...[
+                            SizedBox(
+                              height: settings.showTodayProgress ? 20 : 6,
+                            ),
+                            _ViewSelector(mode: _mode, onChanged: _changeMode),
+                          ],
+                          if (!minimal || categories.isNotEmpty) ...[
+                            const SizedBox(height: 14),
+                            _CategoryBar(
+                              categories: categories,
+                              selected: _category,
+                              onSelected: _pickCategory,
+                              filtered: todayFiltered(settings),
+                              onFilter: minimal ? null : openFilter,
+                            ),
+                          ],
                           const SizedBox(height: 14),
-                          _CategoryBar(
-                            categories: categories,
-                            selected: _category,
-                            onSelected: _pickCategory,
-                            filtered: todayFiltered(settings),
-                            onFilter: minimal ? null : openFilter,
-                          ),
-                        ],
-                        const SizedBox(height: 14),
-                        if (allDone) const TodayAllDone(),
+                          if (allDone) const TodayAllDone(),
+                        ] else
+                          const SizedBox(height: 14),
                       ],
                     );
 
@@ -995,6 +1039,44 @@ class _ActionTile extends StatelessWidget {
       leading: Icon(icon, color: color, size: 22),
       title: Text(label, style: sheetOptionStyle(context, color: color)),
       onTap: onTap,
+    );
+  }
+}
+
+class _ChromeToggle extends StatelessWidget {
+  const _ChromeToggle({required this.expanded, required this.onTap});
+
+  final bool expanded;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      expanded: expanded,
+      label: context.l10n.today,
+      child: GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
+        child: Container(
+          width: 28,
+          height: 28,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: context.colors.surfaceContainerHighest.withValues(alpha: 0.7),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: AnimatedRotation(
+            turns: expanded ? 0.5 : 0,
+            duration: const Duration(milliseconds: 200),
+            child: Icon(
+              LucideIcons.chevronDown,
+              size: 16,
+              color: context.tokens.muted,
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

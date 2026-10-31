@@ -1,0 +1,101 @@
+name: Signed APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+env:
+  FLUTTER_VERSION: '3.41.9'
+
+jobs:
+  build:
+    name: Build signed APKs
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Restore local signing key
+        uses: actions/cache@v4
+        with:
+          path: |
+            android/app/streak-release.p12
+            android/signing-pass.txt
+          key: loop-streak-upload-keystore-v1
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Set up signing
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+        run: |
+          set -euo pipefail
+          if [ -n "${KEYSTORE_BASE64:-}" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > android/app/streak-release.p12
+            ALIAS="${KEY_ALIAS:-upload}"
+            STORE_PASS="$KEYSTORE_PASSWORD"
+            KEY_PASS="${KEY_PASSWORD:-$KEYSTORE_PASSWORD}"
+          elif [ -f android/app/streak-release.p12 ] && [ -f android/signing-pass.txt ]; then
+            ALIAS=upload
+            STORE_PASS="$(cat android/signing-pass.txt)"
+            KEY_PASS="$STORE_PASS"
+          else
+            ALIAS=upload
+            STORE_PASS="$(openssl rand -base64 24)"
+            printf '%s' "$STORE_PASS" > android/signing-pass.txt
+            keytool -genkeypair \
+              -keystore android/app/streak-release.p12 \
+              -storetype PKCS12 \
+              -alias "$ALIAS" \
+              -keyalg RSA \
+              -keysize 2048 \
+              -validity 10000 \
+              -dname 'CN=Loop Streak Release' \
+              -storepass "$STORE_PASS" \
+              -keypass "$STORE_PASS"
+          fi
+          cat > android/key.properties <<EOF
+          storePassword=$STORE_PASS
+          keyPassword=$KEY_PASS
+          keyAlias=$ALIAS
+          storeFile=streak-release.p12
+          storeType=PKCS12
+          EOF
+          sed -i 's/^[[:space:]]*//' android/key.properties
+
+      - name: Build split APKs
+        run: flutter build apk --release --split-per-abi
+
+      - name: Rename APKs
+        run: |
+          cd build/app/outputs/flutter-apk
+          mv app-arm64-v8a-release.apk     Streak-arm64-v8a.apk
+          mv app-armeabi-v7a-release.apk   Streak-armeabi-v7a.apk
+          mv app-x86_64-release.apk        Streak-x86_64.apk
+
+      - name: Upload APK artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: streak-signed-apks
+          path: build/app/outputs/flutter-apk/Streak-*.apk
+          if-no-files-found: error
+          retention-days: 90

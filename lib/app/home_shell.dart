@@ -124,6 +124,7 @@ class _HomeShellState extends State<HomeShell>
 
   void _select(List<_Tab> tabs, _Tab tab) {
     if (tab == _tab) return;
+    if (_tab == _Tab.today || tab == _Tab.today) HomePage.collapseChrome();
     if (tab == _Tab.today && _replayDue) {
       _replayDue = false;
       TodayIntro.replay();
@@ -227,6 +228,7 @@ class _HomeShellState extends State<HomeShell>
     if (state == AppLifecycleState.resumed) {
       final left = _leftAt;
       _leftAt = null;
+      HomePage.collapseChrome();
       if (left != null && DateTime.now().difference(left) >= _awayForReplay) {
         _replayDue = _tab != _Tab.today;
         if (!_replayDue) TodayIntro.replay();

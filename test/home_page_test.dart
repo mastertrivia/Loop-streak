@@ -10,6 +10,7 @@ import 'package:streak/features/habits/state/habits_controller.dart';
 import 'package:streak/features/habits/widgets/grid_habit_cards.dart';
 import 'package:streak/features/habits/widgets/habit_card.dart';
 import 'package:streak/features/habits/widgets/habit_heatmap.dart';
+import 'package:streak/features/habits/widgets/today_progress.dart';
 
 import 'support/app_harness.dart';
 
@@ -155,8 +156,38 @@ void main() {
       await _seedThree(tester);
       await _pumpHome(tester, HeatmapMode.week);
 
+      await tester.tap(find.byIcon(LucideIcons.chevronDown));
+      await tester.pumpAndSettle();
       expect(find.byIcon(LucideIcons.chevronsDownUp), findsOneWidget);
       expect(find.byType(HabitHeatmap), findsWidgets);
+    });
+
+    testWidgets('the home chrome stays collapsed until the dropdown is opened',
+        (tester) async {
+      await _seedThree(tester);
+      await _pumpHome(tester, HeatmapMode.week);
+
+      expect(find.byType(TodayProgress), findsOneWidget);
+      expect(find.text('Today'), findsNothing);
+      expect(find.text('Week'), findsNothing);
+      expect(find.byIcon(LucideIcons.listFilter), findsNothing);
+      expect(find.byIcon(LucideIcons.chevronsDownUp), findsNothing);
+      expect(find.text('Read'), findsOneWidget);
+
+      await tester.tap(find.byIcon(LucideIcons.chevronDown));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Today'), findsOneWidget);
+      expect(find.text('Week'), findsOneWidget);
+      expect(find.byIcon(LucideIcons.listFilter), findsOneWidget);
+      expect(find.byIcon(LucideIcons.chevronsDownUp), findsOneWidget);
+
+      await tester.tap(find.byIcon(LucideIcons.chevronDown));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Today'), findsNothing);
+      expect(find.text('Week'), findsNothing);
+      expect(find.byIcon(LucideIcons.listFilter), findsNothing);
     });
 
     testWidgets('collapsed cards shrink and join into one block',
@@ -172,6 +203,8 @@ void main() {
       );
 
       expect(find.byType(HabitHeatmap), findsNothing);
+      await tester.tap(find.byIcon(LucideIcons.chevronDown));
+      await tester.pumpAndSettle();
       expect(find.byIcon(LucideIcons.chevronsUpDown), findsOneWidget);
 
       final cards = tester.widgetList<HabitCard>(find.byType(HabitCard));

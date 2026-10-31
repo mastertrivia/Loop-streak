@@ -22,6 +22,7 @@ void main() {
 
     expect(find.byType(HomePage), findsOneWidget);
     expect(find.text('Today'), findsWidgets);
+    expect(find.byIcon(LucideIcons.listFilter), findsNothing);
 
     await tester.tap(find.byIcon(LucideIcons.chartColumn).last);
     await tester.pumpAndSettle();
@@ -31,6 +32,25 @@ void main() {
     await tester.tap(find.byIcon(LucideIcons.settings).last);
     await tester.pumpAndSettle();
     expect(find.byType(SettingsPage), findsOneWidget);
+  });
+
+  testWidgets('returning to Today collapses the home chrome', (tester) async {
+    await seedHabits(tester, [
+      testHabit(id: 'a', name: 'Read', done: lastDays(5)),
+    ]);
+    await pumpScreen(tester, const HomeShell());
+
+    await tester.tap(find.byIcon(LucideIcons.chevronDown));
+    await tester.pumpAndSettle();
+    expect(find.byIcon(LucideIcons.listFilter), findsOneWidget);
+
+    await tester.tap(find.byIcon(LucideIcons.chartColumn).last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(LucideIcons.house).last);
+    await tester.pumpAndSettle();
+
+    expect(find.byIcon(LucideIcons.listFilter), findsNothing);
+    expect(find.text('Read'), findsOneWidget);
   });
 
   testWidgets('the stats tab only does its counting once it is opened',

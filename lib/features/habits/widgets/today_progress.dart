@@ -13,11 +13,13 @@ class TodayProgress extends StatefulWidget {
     required this.done,
     required this.total,
     required this.ratio,
+    this.leading,
   });
 
   final int done;
   final int total;
   final double ratio;
+  final Widget? leading;
 
   @override
   State<TodayProgress> createState() => _TodayProgressState();
@@ -99,13 +101,23 @@ class _TodayProgressState extends State<TodayProgress>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    _today(context),
-                    style: TextStyle(
-                      color: context.tokens.muted,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                    ),
+                  Row(
+                    children: [
+                      if (widget.leading != null) ...[
+                        widget.leading!,
+                        const SizedBox(width: 6),
+                      ],
+                      Flexible(
+                        child: Text(
+                          _today(context),
+                          style: TextStyle(
+                            color: context.tokens.muted,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 4),
                   Text(
